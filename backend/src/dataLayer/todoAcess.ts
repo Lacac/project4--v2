@@ -3,6 +3,7 @@ import * as AWS from 'aws-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
+import { TodoUpdate } from '../models/TodoUpdate'
 // import { TodoUpdate } from '../models/TodoUpdate';
 
 var AWSXRay = require('aws-xray-sdk')
@@ -20,6 +21,8 @@ export class TodosAccess {
         private readonly todoIndex = process.env.TODOS_CREATED_AT_INDEX
     ){}
     
+
+    // Function 1: Get all TodoItems for 1 user by userId
     async getAllTodoItems(userId: string): Promise<TodoItem[]> {
         logger.info('GetAllTodoItems called')
 
@@ -36,6 +39,8 @@ export class TodosAccess {
         return todo as TodoItem[]
     }
 
+    
+    // Function 2: Create a new todo Items for user 
     async createTodoItem(todoItem: TodoItem): Promise<TodoItem> {
         logger.info('CreateTodoItem called')
 
@@ -46,5 +51,57 @@ export class TodosAccess {
 
         return todoItem as TodoItem
     }
+
+    // Function 3: Update todo Item 
+    async updateTodoItem(
+        userId: string, 
+        todoId: string,
+        todoUpdate: TodoUpdate
+    ): Promise<TodoUpdate> {
+        logger.info('updateTodo called')
+        await this.docClient.update({
+            TableName: this.todoTable,
+            Key: {
+                userId,
+                todoId
+            },
+            UpdateExpression: 'set #name = :name, dueDate = :dueDate, done = :done',
+            ExpressionAttributeValues:{
+                ':name': todoUpdate.name,
+                ':dueDate': todoUpdate.dueDate,
+                ':done': todoUpdate.done
+            },
+            ExpressionAttributeNames: {
+                '#name': 'name'
+            },
+        }).promise()
+
+        return todoUpdate as TodoUpdate
+    }
+
+    // Function 4: delete a todo Item
+    async deleteTodoItem(
+        userId: string,
+        todoId: string
+    ): Promise<string> {
+        logger.info('deleteTodo called')
+        await this.docClient.delete({
+            TableName: this.todoTable,
+            Key: {
+                userId,
+                todoId
+            }    
+        }).promise()
+        return todoId as string
+    }
+
+    // Function 5: Generate presinedURL for a todo item: attachment
+
+
+    
+
 }
+
+
+    
 

@@ -3,7 +3,10 @@ org: ngocht9
 app: serverless-todo-app
 service: serverless-todo-app
 
-configValidationMode: error
+
+configValidationMode: warn
+disabledDeprecations: '*'
+deprecationNotificationMode: warn
 
 plugins:
   - serverless-webpack
@@ -27,11 +30,10 @@ provider:
   # Use these variables in the functions and resouorces section below. For example, 
   # ${self:provider.environment.ATTACHMENT_S3_BUCKET}
   environment:
-    TODOS_TABLE: Todos-${self:provider.stage}
+    TODOS_TABLE: Todos-test-${self:provider.stage}
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
     ATTACHMENT_S3_BUCKET: ngocht-631392691795-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
-    PROJECT_NAME: ngocht-project-serverless 
 
 
   logs:
@@ -46,19 +48,31 @@ provider:
             - xray:PutTelemetryRecords
             - xray:PutTraceSegments
           Resource: "*"
+        # - Effect: Allow
+        #   Action: 
+        #     - dynamodb:Scan
+        #     - dynamodb:PutItem
+        #     - dynamodb:GetItem
+        #     - dynamodb:Query
+        #     - dynamodb:UpdateItem
+        #     - dynamodb:DeleteItem
+        #   Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
         - Effect: Allow
           Action: 
-          - dynamodb:Scan
-          - dynamodb:PutItem
-          - dynamodb:GetItem
-          - dynamodb:Query
-          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+            - s3:PutObject
+            - s3:GetObject
+          Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*
+        # - Effect: Allow
+        #   Action: 
+        #     - dynamodb:Query
+        #   Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
+
 
 custom: 
   documentation:
     api:
       info:
-        version: v1.0.0
+        version: 'v1.0.0'
         title: Udagram API
         description: Serverless application for todo item sharing
     models:
@@ -76,14 +90,30 @@ functions:
 
 #   # TODO: Configure this function - 
 #   # Provide iamRoleStatements property for performing Actions on DynamoDB
-#   GetTodos:
-#     handler: src/lambda/http/getTodos.handler
-#     events:
-#       - http:
-#           method: get
-#           path: todos
-#           cors: true
-#           authorizer: Auth
+  GetTodos:
+    handler: src/lambda/http/getTodos.handler
+    events:
+      - http:
+          method: get
+          path: todos
+          cors: true
+          authorizer: Auth
+    iam:
+      role:
+        statements:
+          - Effect: Allow
+            Action: 
+              - dynamodb: Query
+            Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+          - Effect: Allow
+            Action: 
+              - dynamodb: Query
+            Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
+          - Effect: Allow
+            Action: 
+              - xray:PutTraceSegments
+            Resource: 
+              - '*'
 
 #   # TODO: Configure this function - 
 #   # Provide iamRoleStatements property. Decide the Actions and AWS Resource. 
@@ -96,68 +126,101 @@ functions:
           method: post
           path: todos
           cors: true
-#          authorizer: Auth
+          authorizer: Auth
           reqValidatorName: RequestBodyValidator
           documentation:
             summary: Create a new todoItem
             description: Create a new todoItem
             requestModels:
               'application/json': CreateRequest
-    # iamRoleStatementsName: ${self:provider.environment.PROJECT_NAME}-create-todo-role-${self:provider.environment.TODOS_CREATED_AT_INDEX}
-    # iamRoleStatements:
-    #   - Effect: Allow
-    #     Action: 
-    #       - dynamodb: PutItem
-    #     Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-    #   - Effect: Allow
-    #     Action: 
-    #       - xray:PutTraceSegments
-    #     Resource: 
-    #       - '*'
+    iam:
+      role:
+        statements:
+          - Effect: Allow
+            Action: 
+              - dynamodb: PutItem
+            Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+          - Effect: Allow
+            Action: 
+              - xray:PutTraceSegments
+            Resource: 
+              - '*'
 
 #   # TODO: Configure this function
-#   # Provide property for setting up CORS, Authorizer, iamRoleStatements, and request schemas
-#   UpdateTodo:
-#     handler: src/lambda/http/updateTodo.handler
-#     events:
-#       - http:
-#           method: patch
-#           path: todos/{todoId}
+# #   # Provide property for setting up CORS, Authorizer, iamRoleStatements, and request schemas
+  UpdateTodo:
+    handler: src/lambda/http/updateTodo.handler
+    events:
+      - http:
+          method: patch
+          path: todos/{todoId}
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Update a todoItem
+            description: Update a todoItem
+            requestModels:
+              'application/json': UpdateRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action: 
+          - xray:PutTraceSegments
+        Resource: 
+          - '*'          
+
+
+
+  # TODO: Configure this function
+  # Provide property for setting up CORS, Authorizer, iamRoleStatements
+  DeleteTodo:
+    handler: src/lambda/http/deleteTodo.handler
+    events:
+      - http:
+          method: delete
+          path: todos/{todoId}
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action: 
+          - xray:PutTraceSegments
+        Resource: 
+          - '*'  
 
 #   # TODO: Configure this function
 #   # Provide property for setting up CORS, Authorizer, iamRoleStatements
-#   DeleteTodo:
-#     handler: src/lambda/http/deleteTodo.handler
-#     events:
-#       - http:
-#           method: delete
-#           path: todos/{todoId}
+  GenerateUploadUrl:
+    handler: src/lambda/http/generateUploadUrl.handler
+    events:
+      - http:
+          method: post
+          path: todos/{todoId}/attachment
+          cors: true
+          authorizer: Auth
 
-#   # TODO: Configure this function
-#   # Provide property for setting up CORS, Authorizer, iamRoleStatements
-#   GenerateUploadUrl:
-#     handler: src/lambda/http/generateUploadUrl.handler
-#     events:
-#       - http:
-#           method: post
-#           path: todos/{todoId}/attachment
 
 resources:
   Resources:
-    # Add necessary AWS resources. You will need at least the following AWS resources
-    # TODO: Fill the properties
-    # Feel free to change the names as you like. 
     GatewayResponseDefault4XX:
       Type: AWS::ApiGateway::GatewayResponse
       Properties:
         ResponseParameters:
           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
           gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,DELETE, PATCH,PUT'"
         ResponseType: DEFAULT_4XX
         RestApiId:
           Ref: ApiGatewayRestApi
-    
+
     # TODO: Create a DynamoDB table with local secondary index and a composite key
     TodosTable:
       Type: AWS::DynamoDB::Table
