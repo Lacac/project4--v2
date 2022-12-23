@@ -48,24 +48,25 @@ provider:
             - xray:PutTelemetryRecords
             - xray:PutTraceSegments
           Resource: "*"
-        # - Effect: Allow
-        #   Action: 
-        #     - dynamodb:Scan
-        #     - dynamodb:PutItem
-        #     - dynamodb:GetItem
-        #     - dynamodb:Query
-        #     - dynamodb:UpdateItem
-        #     - dynamodb:DeleteItem
-        #   Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+        - Effect: Allow
+          Action: 
+            - dynamodb:Scan
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:Query
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
         - Effect: Allow
           Action: 
             - s3:PutObject
             - s3:GetObject
+            - s3:DeleteObject
           Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*
-        # - Effect: Allow
-        #   Action: 
-        #     - dynamodb:Query
-        #   Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
+        - Effect: Allow
+          Action: 
+            - dynamodb:Query
+          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
 
 
 custom: 
@@ -206,6 +207,17 @@ functions:
           path: todos/{todoId}/attachment
           cors: true
           authorizer: Auth
+
+# Delete Images: 
+  DeleteImage:
+    handler: src/lambda/http/deleteImage.handler
+    events:
+      - http:
+          method: delete
+          path: images/{todoId}
+          cors: true
+          authorizer: Auth
+
 
 
 resources:
