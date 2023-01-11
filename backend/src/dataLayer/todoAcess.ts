@@ -18,7 +18,9 @@ export class TodosAccess {
     constructor(
         private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
         private readonly todoTable = process.env.TODOS_TABLE,
-        private readonly todoIndex = process.env.TODOS_CREATED_AT_INDEX
+        private readonly todoIndex = process.env.TODOS_CREATED_AT_INDEX,
+        private readonly s3 = new XAWS.S3({signatureVersion: 'v4'}),
+        private readonly s3BucketName = process.env.ATTACHMENT_S3_BUCKET
     ){}
     
 
@@ -96,7 +98,20 @@ export class TodosAccess {
     }
 
     // Function 5: Generate presinedURL for a todo item: attachment
-
+    
+    // Function: delete a image todo
+    async deleteImageTodo(
+   //     userId: string,
+        todoId: string
+    ): Promise<string> {
+        logger.info('deleteImage called')
+        const params = {
+            Bucket: this.s3BucketName,
+            Key: todoId
+      } 
+        await this.s3.deleteObject(params).promise()
+        return todoId as string
+    }
 
     
 

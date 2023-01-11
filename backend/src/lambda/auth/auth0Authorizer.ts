@@ -41,11 +41,12 @@ export const handler = async (
   event: CustomAuthorizerEvent
 ): Promise<CustomAuthorizerResult> => {
 
+  console.log('Auth event called', event)
   logger.info('Authorizing a user', event.authorizationToken)
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
     logger.info('User was authorized', jwtToken)
-
+    
     return {
       principalId: jwtToken.sub,       // IAM policy in : Authentication - Implement a Custom Authorizer
       policyDocument: {
@@ -88,7 +89,7 @@ async function verifyToken(authHeader: string): Promise<JwtPayload> {
   // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
 
   return verify(token, cert, { algorithms: ['RS256'] }) as JwtPayload
-}
+} 
 
 function getToken(authHeader: string): string {
   if (!authHeader) throw new Error('No authentication header')

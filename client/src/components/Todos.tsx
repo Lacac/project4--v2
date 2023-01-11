@@ -74,9 +74,14 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
   onTodoDelete1 = async (todoId: string) => {
     try {
       await deleteImage(this.props.auth.getIdToken(), todoId)
+      var pos = this.state.todos.findIndex(todo => todo.todoId === todoId)
       this.setState({
-        todos: this.state.todos.filter(todo => todo.todoId !== todoId)
+        todos: update(this.state.todos, {
+          [pos]: { attachmentUrl: { $set: undefined } }
+        })
       })
+      alert('image delete done')
+      
     } catch {
       alert('Image deletion failed')
     }
@@ -205,7 +210,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
                 <Button
                   icon
                   color="orange"
-                  // onClick={() => this.onTodoDelete1(todo.todoId)}
+                  onClick={() => this.onTodoDelete1(todo.todoId)}
                 >
                   <Icon name="delete" />
                 </Button>

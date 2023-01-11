@@ -53,7 +53,7 @@ export async function updateTodo(
     return await todosAcess.updateTodoItem(userId,todoId,todoUpdate)
 }
 
-    // Function delete
+    // Function delete to do item
 export async function deleteTodo(
     userId:string,
     todoId: string
@@ -66,4 +66,12 @@ export async function createAttachmentPresignedUrl(
     todoId: string
 ): Promise<string> {
     return attachmentUtils.getUploadUrl(todoId)
+}
+
+    // Function delete image
+export async function deleteImage(
+//    userId:string,
+    todoId: string
+): Promise<string> {
+    return todosAcess.deleteImageTodo(todoId)
 }

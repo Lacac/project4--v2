@@ -4,7 +4,7 @@
   "description": "Serverless TODO image app",
   "main": "handler.js",
   "scripts": {
-    "test": "mocha --require ts-node/register src/lambda/test/getTodos.test.ts"
+    "test": "mocha --require ts-node/register src/lambda/test/*.test.ts"
   },
   "dependencies": {
     "@middy/core": "^4.0.2",

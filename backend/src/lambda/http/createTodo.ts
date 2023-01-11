@@ -1,4 +1,5 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
+// import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
+import { APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
 import 'source-map-support/register'
 // import * as middy from 'middy'
 // import { cors } from 'middy/src/middlewares'
@@ -35,10 +36,11 @@ import { createTodo } from '../../businessLogic/todos'
 //   })
 // )
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler: APIGatewayProxyHandler = async (event: any): Promise<APIGatewayProxyResult> => {
   const newTodo: CreateTodoRequest = JSON.parse(event.body)
     // TODO: Implement creating a new TODO item
 
+    console.log('CREATE todo event called', event)
     const userId = getUserId(event)
     const newItem = await createTodo(userId, newTodo)
 
