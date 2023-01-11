@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "lambda-tester": "^4.0.1"
+  }
+}
